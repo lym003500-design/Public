@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}دليل الحسابات{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-list-ul"></i> دليل (شجرة) الحسابات</h2>
+    <div class="card">
+        <div class="card-header">الحسابات الافتراضية للنظام</div>
+        <div class="card-body">
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <b>1. الأصول</b> <span class="badge bg-primary rounded-pill">مدين</span>
+                </li>
+                <li class="list-group-item ps-4">--- حـ/ الخزينة الرئيسية</li>
+                <li class="list-group-item ps-4">--- حـ/ البنك</li>
+                <li class="list-group-item ps-4">--- حـ/ المخزون السلعي</li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <b>2. الالتزامات وحقوق الملكية</b> <span class="badge bg-danger rounded-pill">دائن</span>
+                </li>
+                <li class="list-group-item ps-4">--- حـ/ رأس المال</li>
+                <li class="list-group-item ps-4">--- حـ/ الموردين</li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <b>3. الإيرادات والمصروفات</b> <span class="badge bg-secondary rounded-pill">متنوع</span>
+                </li>
+                <li class="list-group-item ps-4">--- حـ/ المبيعات (دائن)</li>
+                <li class="list-group-item ps-4">--- حـ/ المشتريات (مدين)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
