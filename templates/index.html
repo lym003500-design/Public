@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> لوحة التحكم الشاملة</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white p-3 text-center">
+                <h3 id="total-accounts">0</h3>
+                <p class="mb-0">إجمالي الحسابات</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white p-3 text-center">
+                <h3 id="total-customers">0</h3>
+                <p class="mb-0">إجمالي العملاء</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark p-3 text-center">
+                <h3 id="total-suppliers">0</h3>
+                <p class="mb-0">إجمالي الموردين</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white p-3 text-center">
+                <h3 id="total-products">0</h3>
+                <p class="mb-0">الأصناف بالمخزن</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-lightning"></i> روابط الوصول السريع</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3"><a href="/journal" class="btn btn-outline-primary w-100 mb-2">إضافة قيد يومية</a></div>
+                <div class="col-md-3"><a href="/sales" class="btn btn-outline-success w-100 mb-2">فاتورة مبيعات</a></div>
+                <div class="col-md-3"><a href="/purchases" class="btn btn-outline-warning w-100 mb-2">فاتورة مشتريات</a></div>
+                <div class="col-md-3"><a href="/inventory" class="btn btn-outline-danger w-100 mb-2">جرد المخزن</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    fetch('/api/dashboard')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('total-accounts').textContent = data.total_accounts;
+            document.getElementById('total-customers').textContent = data.total_customers;
+            document.getElementById('total-suppliers').textContent = data.total_suppliers;
+            document.getElementById('total-products').textContent = data.total_products;
+        });
+</script>
+{% endblock %}
