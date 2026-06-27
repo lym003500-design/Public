@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}إدارة العملاء{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-people"></i> دليل العملاء</h2>
+    <div class="card mb-4">
+        <div class="card-header">إضافة عميل جديد</div>
+        <div class="card-body">
+            <form id="customerForm" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">اسم العميل بالكامل</label>
+                    <input type="text" id="custName" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="text" id="custPhone" class="form-control" required>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">إضافة العميل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>كود العميل</th>
+                        <th>الاسم</th>
+                        <th>الهاتف</th>
+                    </tr>
+                </thead>
+                <tbody id="customerRows"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('customerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch('/api/customers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: document.getElementById('custName').value,
+                phone: document.getElementById('custPhone').value
+            })
+        }).then(() => { this.reset(); loadCustomers(); });
+    });
+
+    function loadCustomers() {
+        fetch('/api/customers')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('customerRows').innerHTML = data.map(c => `
+                    <tr>
+                        <td>CUST-00${c.id}</td>
+                        <td>${c.name}</td>
+                        <td>${c.phone}</td>
+                    </tr>
+                `).join('');
+            });
+    }
+    loadCustomers();
+</script>
+{% endblock %}
