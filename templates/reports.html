@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}القوائم المالية{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-graph-up-arrow"></i> التقارير والقوائم المالية التلقائية</h2>
+    
+    <div class="row">
+        <!-- ميزان المراجعة -->
+        <div class="col-md-7">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">ميزان المراجعة بالأرصدة الحالية</div>
+                <div class="card-body">
+                    <table class="table table-bordered text-center">
+                        <thead>
+                            <tr class="table-secondary">
+                                <th>اسم الحساب</th>
+                                <th>الرصيد الحالي</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trialBalanceRows">
+                            <!-- سيتم الجلب تلقائياً بالجافا سكريبت -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- قائمة الدخل المبسطة -->
+        <div class="col-md-5">
+            <div class="card mb-4 text-white bg-dark">
+                <div class="card-header border-light">قائمة الدخل (الأرباح والخسائر)</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>إجمالي المبيعات (الإيرادات):</span>
+                        <span id="reportSales" class="text-success">0 ج.م</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>إجمالي المشتريات (المصروفات):</span>
+                        <span id="reportPurchases" class="text-danger">0 ج.m</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <h4>صافي الربح/الخسارة:</h4>
+                        <h4 id="reportNetProfit" class="text-warning">0 ج.م</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function loadFinancialReports() {
+    fetch('/api/financial-reports')
+        .then(res => res.json())
+        .then(data => {
+            // 1. ملء ميزان المراجعة
+            let rows = '';
+            for (let acc in data.balances) {
+                let bal = data.balances[acc];
+                rows += `<tr><td>${acc}</td><td class="${bal >= 0 ? 'text-success':'text-danger'}"><b>${bal} ج.م</b></td></tr>`;
+            }
+            document.getElementById('trialBalanceRows').innerHTML = rows;
+
+            // 2. ملء قائمة الدخل
+            document.getElementById('reportSales').innerText = (Math.abs(data.balances['المبيعات'] || 0)) + " ج.م";
+            document.getElementById('reportPurchases').innerText = (data.balances['المشتريات'] || 0) + " ج.م";
+            document.getElementById('reportNetProfit').innerText = data.net_income + " ج.م";
+        });
+}
+// تحميل التقارير فور فتح الصفحة
+loadFinancialReports();
+</script>
+{% endblock %}
