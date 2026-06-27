@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}دفتر اليومية{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-book"></i> دفتر اليومية العام</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">إضافة قيد محاسبي جديد</div>
+        <div class="card-body">
+            <form id="journalForm" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">البيان / الوصف</label>
+                    <input type="text" id="description" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الحساب المدين (من حـ/)</label>
+                    <input type="text" id="debit_account" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الحساب الدائن (إلى حـ/)</label>
+                    <input type="text" id="credit_account" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">المبلغ</label>
+                    <input type="number" id="amount" class="form-control" required>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">تسجيل القيد</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">القيود المسجلة</div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>البيان</th>
+                        <th>المدين</th>
+                        <th>الدائن</th>
+                        <th>المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody id="journalEntries"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('journalForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const data = {
+            description: document.getElementById('description').value,
+            debit_account: document.getElementById('debit_account').value,
+            credit_account: document.getElementById('credit_account').value,
+            amount: document.getElementById('amount').value
+        };
+        
+        fetch('/api/journal', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(() => { form.reset(); loadEntries(); });
+    });
+
+    function loadEntries() {
+        fetch('/api/journal')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('journalEntries');
+                tbody.innerHTML = data.map(e => `
+                    <tr>
+                        <td>${new Date(e.date).toLocaleDateString('ar-EG')}</td>
+                        <td>${e.description}</td>
+                        <td class="text-success">${e.debit_account}</td>
+                        <td class="text-danger">${e.credit_account}</td>
+                        <td><b>${e.amount} ج.م</b></td>
+                    </tr>
+                `).join('');
+            });
+    }
+    loadEntries();
+</script>
+{% endblock %}
