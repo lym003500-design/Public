@@ -1,58 +1,125 @@
-{% extends "base.html" %}
-{% block title %}لوحة التحكم{% endblock %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - نظام محاسبي</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
-{% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> لوحة التحكم الشاملة</h2>
-    
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white p-3 text-center">
-                <h3 id="total-accounts">0</h3>
-                <p class="mb-0">إجمالي الحسابات</p>
+        .navbar { background: #1a237e; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .navbar a { color: white; text-decoration: none; padding: 8px 16px; margin: 0 5px; border-radius: 4px; transition: 0.3s; }
+        .navbar a:hover { background: #3949ab; }
+        .navbar a.active { background: #5c6bc0; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+        .stat-icon { font-size: 2em; margin-bottom: 10px; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #1a237e; }
+        .stat-label { color: #666; font-size: 0.95em; margin-top: 5px; }
+        .stat-card.success .stat-value { color: #2e7d32; }
+        .stat-card.warning .stat-value { color: #f9a825; }
+        .stat-card.danger .stat-value { color: #c62828; }
+        .stat-card.info .stat-value { color: #1565c0; }
+
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card-title { font-size: 1.4em; color: #1a237e; margin-bottom: 16px; border-bottom: 2px solid #e8eaf6; padding-bottom: 10px; }
+
+        .quick-actions { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; }
+        .action-btn { display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: #1a237e; color: white; text-decoration: none; border-radius: 8px; transition: 0.3s; }
+        .action-btn:hover { background: #283593; transform: translateY(-2px); }
+
+        .system-info { background: #e8eaf6; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .system-info h3 { color: #1a237e; margin-bottom: 10px; }
+        .system-info p { color: #555; line-height: 1.6; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <a href="/" class="active">لوحة التحكم</a>
+            <a href="/journal">دفتر اليومية</a>
+            <a href="/ledger">دفتر الأستاذ</a>
+            <a href="/accounts">دليل الحسابات</a>
+            <a href="/inventory">المخزون</a>
+            <a href="/purchases">المشتريات</a>
+            <a href="/sales">المبيعات</a>
+            <a href="/customers">العملاء</a>
+            <a href="/suppliers">الموردين</a>
+            <a href="/reports">التقارير</a>
+            <a href="/accounting-cycle">الدورة المحاسبية</a>
+        </div>
+
+        <h1 style="margin-bottom: 20px; color: #1a237e;">📊 لوحة التحكم</h1>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="cashBalance">-</div>
+                <div class="stat-label">رصيد الخزينة</div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-icon">🏦</div>
+                <div class="stat-value" id="bankBalance">-</div>
+                <div class="stat-label">رصيد البنك</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value" id="inventoryValue">-</div>
+                <div class="stat-label">قيمة المخزون</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="receivables">-</div>
+                <div class="stat-label">ذمم العملاء</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value" id="payables">-</div>
+                <div class="stat-label">ذمم الموردين</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value" id="grossProfit">-</div>
+                <div class="stat-label">الربح الإجمالي</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white p-3 text-center">
-                <h3 id="total-customers">0</h3>
-                <p class="mb-0">إجمالي العملاء</p>
+
+        <div class="card">
+            <h2 class="card-title">⚡ إجراءات سريعة</h2>
+            <div class="quick-actions">
+                <a href="/purchases" class="action-btn">🛒 فاتورة مشتريات</a>
+                <a href="/sales" class="action-btn">💵 فاتورة مبيعات</a>
+                <a href="/inventory" class="action-btn">📦 إضافة صنف</a>
+                <a href="/journal" class="action-btn">📝 قيد يدوي</a>
+                <a href="/accounting-cycle" class="action-btn">🔍 التحقق من الدورة</a>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark p-3 text-center">
-                <h3 id="total-suppliers">0</h3>
-                <p class="mb-0">إجمالي الموردين</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-danger text-white p-3 text-center">
-                <h3 id="total-products">0</h3>
-                <p class="mb-0">الأصناف بالمخزن</p>
-            </div>
+
+        <div class="system-info">
+            <h3>🔄 نظام الجرد المستمر (Perpetual Inventory System)</h3>
+            <p>هذا النظام يقوم بتحديث سجلات المخزون بشكل فوري مع كل عملية شراء أو بيع. يتم تسجيل تكلفة البضاعة المباعة (COGS) في نفس لحظة البيع، مما يتيح معرفة الأرباح والمخزون في الوقت الفعلي.</p>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header"><i class="bi bi-lightning"></i> روابط الوصول السريع</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3"><a href="/journal" class="btn btn-outline-primary w-100 mb-2">إضافة قيد يومية</a></div>
-                <div class="col-md-3"><a href="/sales" class="btn btn-outline-success w-100 mb-2">فاتورة مبيعات</a></div>
-                <div class="col-md-3"><a href="/purchases" class="btn btn-outline-warning w-100 mb-2">فاتورة مشتريات</a></div>
-                <div class="col-md-3"><a href="/inventory" class="btn btn-outline-danger w-100 mb-2">جرد المخزن</a></div>
-            </div>
-        </div>
-    </div>
-</div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const res = await fetch('/api/dashboard-stats');
+                const stats = await res.json();
 
-<script>
-    fetch('/api/dashboard')
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('total-accounts').textContent = data.total_accounts;
-            document.getElementById('total-customers').textContent = data.total_customers;
-            document.getElementById('total-suppliers').textContent = data.total_suppliers;
-            document.getElementById('total-products').textContent = data.total_products;
+                document.getElementById('cashBalance').textContent = stats.cash_balance.toFixed(2);
+                document.getElementById('bankBalance').textContent = stats.bank_balance.toFixed(2);
+                document.getElementById('inventoryValue').textContent = stats.inventory_value.toFixed(2);
+                document.getElementById('receivables').textContent = stats.total_receivables.toFixed(2);
+                document.getElementById('payables').textContent = stats.total_payables.toFixed(2);
+                document.getElementById('grossProfit').textContent = stats.gross_profit.toFixed(2);
+            } catch(e) { console.error('Error loading stats:', e); }
         });
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>
