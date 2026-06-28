@@ -1,90 +1,189 @@
-{% extends "base.html" %}
-{% block title %}دفتر اليومية{% endblock %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دفتر اليومية - نظام محاسبي</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .navbar { background: #1a237e; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .navbar a { color: white; text-decoration: none; padding: 8px 16px; margin: 0 5px; border-radius: 4px; transition: 0.3s; }
+        .navbar a:hover { background: #3949ab; }
+        .navbar a.active { background: #5c6bc0; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card-title { font-size: 1.4em; color: #1a237e; margin-bottom: 16px; border-bottom: 2px solid #e8eaf6; padding-bottom: 10px; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: 0.3s; }
+        .btn-success { background: #2e7d32; color: white; }
+        .btn-success:hover { background: #388e3c; }
+        .journal-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .journal-table th { background: #1a237e; color: white; padding: 12px; text-align: right; }
+        .journal-table td { padding: 12px; border-bottom: 1px solid #e0e0e0; }
+        .journal-table tr:hover { background: #f5f5f5; }
+        .debit { color: #2e7d32; font-weight: bold; }
+        .credit { color: #c62828; font-weight: bold; }
+        .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 15px; }
+        .alert-success { background: #c8e6c9; color: #2e7d32; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <a href="/">لوحة التحكم</a>
+            <a href="/journal" class="active">دفتر اليومية</a>
+            <a href="/ledger">دفتر الأستاذ</a>
+            <a href="/accounts">دليل الحسابات</a>
+            <a href="/inventory">المخزون</a>
+            <a href="/purchases">المشتريات</a>
+            <a href="/sales">المبيعات</a>
+            <a href="/customers">العملاء</a>
+            <a href="/suppliers">الموردين</a>
+            <a href="/reports">التقارير</a>
+            <a href="/accounting-cycle">الدورة المحاسبية</a>
+        </div>
 
-{% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4"><i class="bi bi-book"></i> دفتر اليومية العام</h2>
-    
-    <div class="card mb-4">
-        <div class="card-header">إضافة قيد محاسبي جديد</div>
-        <div class="card-body">
-            <form id="journalForm" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">البيان / الوصف</label>
-                    <input type="text" id="description" class="form-control" required>
+        <div class="card">
+            <h2 class="card-title">📝 قيد يومية جديد</h2>
+            <div id="alertBox"></div>
+            <form id="journalForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>التاريخ</label>
+                        <input type="date" id="entryDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>الوصف</label>
+                        <input type="text" id="description" placeholder="وصف القيد" required>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">الحساب المدين (من حـ/)</label>
-                    <input type="text" id="debit_account" class="form-control" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>حساب المدين</label>
+                        <select id="debitAccount" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>حساب الدائن</label>
+                        <select id="creditAccount" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>المبلغ</label>
+                        <input type="number" id="amount" step="0.01" required>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">الحساب الدائن (إلى حـ/)</label>
-                    <input type="text" id="credit_account" class="form-control" required>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label>المرجع</label>
+                        <input type="text" id="reference" placeholder="رقم المرجع (اختياري)">
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">المبلغ</label>
-                    <input type="number" id="amount" class="form-control" required>
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">تسجيل القيد</button>
-                </div>
+                <button type="submit" class="btn btn-success">💾 حفظ القيد</button>
             </form>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">القيود المسجلة</div>
-        <div class="card-body">
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>التاريخ</th>
-                        <th>البيان</th>
-                        <th>المدين</th>
-                        <th>الدائن</th>
-                        <th>المبلغ</th>
-                    </tr>
-                </thead>
-                <tbody id="journalEntries"></tbody>
-            </table>
+        <div class="card">
+            <h2 class="card-title">📖 قيود اليومية</h2>
+            <div id="entriesList"></div>
         </div>
     </div>
-</div>
 
-<script>
-    const form = document.getElementById('journalForm');
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const data = {
-            description: document.getElementById('description').value,
-            debit_account: document.getElementById('debit_account').value,
-            credit_account: document.getElementById('credit_account').value,
-            amount: document.getElementById('amount').value
-        };
-        
-        fetch('/api/journal', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        }).then(() => { form.reset(); loadEntries(); });
-    });
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('entryDate').valueAsDate = new Date();
+            loadAccounts();
+            loadEntries();
+        });
 
-    function loadEntries() {
-        fetch('/api/journal')
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('journalEntries');
-                tbody.innerHTML = data.map(e => `
-                    <tr>
-                        <td>${new Date(e.date).toLocaleDateString('ar-EG')}</td>
-                        <td>${e.description}</td>
-                        <td class="text-success">${e.debit_account}</td>
-                        <td class="text-danger">${e.credit_account}</td>
-                        <td><b>${e.amount} ج.م</b></td>
-                    </tr>
-                `).join('');
-            });
-    }
-    loadEntries();
-</script>
-{% endblock %}
+        async function loadAccounts() {
+            try {
+                const res = await fetch('/api/accounts');
+                const accounts = await res.json();
+                const debitSelect = document.getElementById('debitAccount');
+                const creditSelect = document.getElementById('creditAccount');
+
+                let options = '<option value="">-- اختر حساب --</option>';
+                for (const [code, info] of Object.entries(accounts)) {
+                    options += `<option value="${code}">${info.name} (${code})</option>`;
+                }
+                debitSelect.innerHTML = options;
+                creditSelect.innerHTML = options;
+            } catch(e) { console.error('Error:', e); }
+        }
+
+        async function loadEntries() {
+            try {
+                const res = await fetch('/api/journal');
+                const entries = await res.json();
+                const container = document.getElementById('entriesList');
+
+                if (entries.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#999;">لا توجد قيود مسجلة</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="journal-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>التاريخ</th>
+                                <th>الوصف</th>
+                                <th>المرجع</th>
+                                <th>المدين</th>
+                                <th>الدائن</th>
+                                <th>المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${entries.slice().reverse().map(e => `
+                                <tr>
+                                    <td>${e.id}</td>
+                                    <td>${e.date}</td>
+                                    <td>${e.description}</td>
+                                    <td>${e.reference || '-'}</td>
+                                    <td class="debit">${e.debit_account}</td>
+                                    <td class="credit">${e.credit_account}</td>
+                                    <td style="font-weight:bold;">${parseFloat(e.amount).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch(e) { console.error('Error:', e); }
+        }
+
+        document.getElementById('journalForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const data = {
+                date: document.getElementById('entryDate').value,
+                description: document.getElementById('description').value,
+                debit_account: document.getElementById('debitAccount').value,
+                credit_account: document.getElementById('creditAccount').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                reference: document.getElementById('reference').value
+            };
+
+            try {
+                const res = await fetch('/api/journal', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    document.getElementById('alertBox').innerHTML = '<div class="alert alert-success">✅ تم حفظ القيد بنجاح</div>';
+                    document.getElementById('journalForm').reset();
+                    document.getElementById('entryDate').valueAsDate = new Date();
+                    loadEntries();
+                    setTimeout(() => document.getElementById('alertBox').innerHTML = '', 3000);
+                }
+            } catch(err) { console.error('Error:', err); }
+        });
+    </script>
+</body>
+</html>
