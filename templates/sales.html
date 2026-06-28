@@ -1,34 +1,452 @@
-{% extends "base.html" %}
-{% block title %}الفواتير والمبيعات{% endblock %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فواتير المشتريات - نظام محاسبي</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
-{% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4"><i class="bi bi-cart-check"></i> إدارة فواتير المبيعات</h2>
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">إنشاء فاتورة بيع جديدة</div>
-        <div class="card-body">
-            <form class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">اسم العميل</label>
-                    <input type="text" class="form-control" placeholder="مثال: أحمد محمد علي" required>
+        /* Navigation */
+        .navbar { background: #1a237e; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .navbar a { color: white; text-decoration: none; padding: 8px 16px; margin: 0 5px; border-radius: 4px; transition: 0.3s; }
+        .navbar a:hover { background: #3949ab; }
+        .navbar a.active { background: #5c6bc0; }
+
+        /* Cards */
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card-title { font-size: 1.4em; color: #1a237e; margin-bottom: 16px; border-bottom: 2px solid #e8eaf6; padding-bottom: 10px; }
+
+        /* Form Styles */
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { border-color: #1a237e; outline: none; }
+
+        /* Items Table */
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .items-table th { background: #1a237e; color: white; padding: 12px; text-align: right; }
+        .items-table td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
+        .items-table tr:hover { background: #f5f5f5; }
+        .items-table input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: 0.3s; }
+        .btn-primary { background: #1a237e; color: white; }
+        .btn-primary:hover { background: #283593; }
+        .btn-success { background: #2e7d32; color: white; }
+        .btn-success:hover { background: #388e3c; }
+        .btn-danger { background: #c62828; color: white; }
+        .btn-danger:hover { background: #d32f2f; }
+        .btn-secondary { background: #757575; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        /* Summary */
+        .summary-box { background: #e8eaf6; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ccc; }
+        .summary-row.total { font-size: 1.2em; font-weight: bold; color: #1a237e; border-top: 2px solid #1a237e; border-bottom: none; margin-top: 10px; padding-top: 10px; }
+
+        /* Invoices List */
+        .invoices-list { margin-top: 30px; }
+        .invoice-item { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+        .invoice-item:hover { background: #f0f0f0; }
+        .invoice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .invoice-number { font-weight: bold; color: #1a237e; }
+        .invoice-date { color: #666; font-size: 0.9em; }
+        .invoice-total { font-size: 1.2em; font-weight: bold; color: #2e7d32; }
+        .invoice-items { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
+        .item-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.9em; }
+
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8em; }
+        .status-completed { background: #c8e6c9; color: #2e7d32; }
+        .status-pending { background: #fff3e0; color: #ef6c00; }
+
+        .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 15px; }
+        .alert-success { background: #c8e6c9; color: #2e7d32; }
+        .alert-error { background: #ffcdd2; color: #c62828; }
+        .alert-info { background: #e3f2fd; color: #1565c0; }
+
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+        .empty-state svg { width: 80px; height: 80px; margin-bottom: 15px; opacity: 0.5; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <a href="/">لوحة التحكم</a>
+            <a href="/journal">دفتر اليومية</a>
+            <a href="/ledger">دفتر الأستاذ</a>
+            <a href="/accounts">دليل الحسابات</a>
+            <a href="/inventory">المخزون</a>
+            <a href="/purchases" class="active">المشتريات</a>
+            <a href="/sales">المبيعات</a>
+            <a href="/customers">العملاء</a>
+            <a href="/suppliers">الموردين</a>
+            <a href="/reports">التقارير</a>
+            <a href="/accounting-cycle">الدورة المحاسبية</a>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">📝 فاتورة مشتريات جديدة (متعددة الأصناف)</h2>
+
+            <div id="alertBox"></div>
+
+            <form id="purchaseForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>رقم الفاتورة</label>
+                        <input type="text" id="invoiceNumber" placeholder="تلقائي">
+                    </div>
+                    <div class="form-group">
+                        <label>التاريخ</label>
+                        <input type="date" id="invoiceDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>المورد</label>
+                        <select id="supplierSelect">
+                            <option value="">-- اختر مورد --</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">الصنف المباع</label>
-                    <input type="text" class="form-control" required>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>طريقة الدفع</label>
+                        <select id="paymentMethod" onchange="updatePaymentFields()">
+                            <option value="credit">آجل</option>
+                            <option value="cash">نقدي</option>
+                            <option value="mixed">جزئي</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="paidAmountGroup" style="display:none;">
+                        <label>المبلغ المدفوع</label>
+                        <input type="number" id="paidAmount" step="0.01" value="0">
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">الكمية</label>
-                    <input type="number" class="form-control" required>
+
+                <h3 style="margin: 20px 0 10px; color: #1a237e;">📦 الأصناف</h3>
+
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>الصنف</th>
+                            <th style="width:100px">الكمية</th>
+                            <th style="width:120px">سعر الوحدة</th>
+                            <th style="width:120px">الإجمالي</th>
+                            <th style="width:50px"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        <tr class="item-row">
+                            <td>
+                                <select class="item-select" onchange="updateItemPrice(this)">
+                                    <option value="">-- اختر صنف --</option>
+                                </select>
+                            </td>
+                            <td><input type="number" class="item-qty" min="1" step="0.01" value="1" onchange="calculateRow(this)"></td>
+                            <td><input type="number" class="item-price" step="0.01" onchange="calculateRow(this)"></td>
+                            <td class="item-total">0.00</td>
+                            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">✕</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <button type="button" class="btn btn-secondary" onclick="addItemRow()">+ إضافة صنف</button>
+
+                <div class="summary-box">
+                    <div class="summary-row">
+                        <span>الإجمالي:</span>
+                        <span id="subtotal">0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>الخصم:</span>
+                        <span><input type="number" id="discount" value="0" step="0.01" style="width:100px; text-align:left;" onchange="calculateTotals()"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span>الضريبة (%):</span>
+                        <span><input type="number" id="taxRate" value="0" step="0.01" style="width:100px; text-align:left;" onchange="calculateTotals()"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span>قيمة الضريبة:</span>
+                        <span id="taxAmount">0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>الإجمالي النهائي:</span>
+                        <span id="grandTotal">0.00</span>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">سعر البيع الإجمالي</label>
-                    <input type="number" class="form-control" required>
+
+                <div class="form-row" style="margin-top: 20px;">
+                    <div class="form-group" style="flex: 2;">
+                        <label>ملاحظات</label>
+                        <input type="text" id="notes" placeholder="أي ملاحظات إضافية...">
+                    </div>
                 </div>
-                <div class="col-12">
-                    <button type="button" class="btn btn-success" onclick="alert('تم إصدار الفاتورة وتحديث المخزن!')">إصدار الفاتورة</button>
-                </div>
+
+                <button type="submit" class="btn btn-success" style="margin-top: 20px; padding: 12px 40px; font-size: 16px;">
+                    💾 حفظ الفاتورة
+                </button>
             </form>
         </div>
+
+        <div class="card invoices-list">
+            <h2 class="card-title">📋 فواتير المشتريات السابقة</h2>
+            <div id="invoicesList"></div>
+        </div>
     </div>
-</div>
-{% endblock %}
+
+    <script>
+        let inventoryItems = [];
+        let suppliersList = [];
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('invoiceDate').valueAsDate = new Date();
+            loadInventory();
+            loadSuppliers();
+            loadInvoices();
+        });
+
+        async function loadInventory() {
+            try {
+                const res = await fetch('/api/inventory');
+                inventoryItems = await res.json();
+                updateItemSelects();
+            } catch(e) { console.error('Error loading inventory:', e); }
+        }
+
+        async function loadSuppliers() {
+            try {
+                const res = await fetch('/api/suppliers');
+                suppliersList = await res.json();
+                const select = document.getElementById('supplierSelect');
+                suppliersList.forEach(s => {
+                    select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                });
+            } catch(e) { console.error('Error loading suppliers:', e); }
+        }
+
+        function updateItemSelects() {
+            document.querySelectorAll('.item-select').forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- اختر صنف --</option>';
+                inventoryItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.id}" data-price="${item.purchase_price}">${item.name} (متوفر: ${item.quantity})</option>`;
+                });
+                select.value = currentVal;
+            });
+        }
+
+        function updateItemPrice(select) {
+            const option = select.selectedOptions[0];
+            const row = select.closest('tr');
+            if (option && option.dataset.price) {
+                row.querySelector('.item-price').value = option.dataset.price;
+            }
+            calculateRow(select);
+        }
+
+        function addItemRow() {
+            const tbody = document.getElementById('itemsBody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'item-row';
+            newRow.innerHTML = `
+                <td>
+                    <select class="item-select" onchange="updateItemPrice(this)">
+                        <option value="">-- اختر صنف --</option>
+                    </select>
+                </td>
+                <td><input type="number" class="item-qty" min="1" step="0.01" value="1" onchange="calculateRow(this)"></td>
+                <td><input type="number" class="item-price" step="0.01" onchange="calculateRow(this)"></td>
+                <td class="item-total">0.00</td>
+                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">✕</button></td>
+            `;
+            tbody.appendChild(newRow);
+            updateItemSelects();
+        }
+
+        function removeItem(btn) {
+            const rows = document.querySelectorAll('.item-row');
+            if (rows.length > 1) {
+                btn.closest('tr').remove();
+                calculateTotals();
+            } else {
+                showAlert('يجب أن تحتوي الفاتورة على صنف واحد على الأقل', 'error');
+            }
+        }
+
+        function calculateRow(element) {
+            const row = element.closest('tr');
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const total = qty * price;
+            row.querySelector('.item-total').textContent = total.toFixed(2);
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                subtotal += qty * price;
+            });
+
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+            const taxable = subtotal - discount;
+            const taxAmount = taxable * (taxRate / 100);
+            const grandTotal = taxable + taxAmount;
+
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('taxAmount').textContent = taxAmount.toFixed(2);
+            document.getElementById('grandTotal').textContent = grandTotal.toFixed(2);
+        }
+
+        function updatePaymentFields() {
+            const method = document.getElementById('paymentMethod').value;
+            const group = document.getElementById('paidAmountGroup');
+            if (method === 'mixed') {
+                group.style.display = 'block';
+            } else {
+                group.style.display = 'none';
+            }
+        }
+
+        function showAlert(message, type) {
+            const box = document.getElementById('alertBox');
+            box.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => box.innerHTML = '', 5000);
+        }
+
+        document.getElementById('purchaseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const items = [];
+            let hasError = false;
+
+            document.querySelectorAll('.item-row').forEach(row => {
+                const itemId = row.querySelector('.item-select').value;
+                const qty = parseFloat(row.querySelector('.item-qty').value);
+                const price = parseFloat(row.querySelector('.item-price').value);
+
+                if (!itemId) { hasError = true; return; }
+                if (!qty || qty <= 0) { hasError = true; return; }
+                if (!price || price <= 0) { hasError = true; return; }
+
+                const item = inventoryItems.find(i => i.id == itemId);
+                items.push({
+                    item_id: parseInt(itemId),
+                    item_name: item ? item.name : '',
+                    quantity: qty,
+                    unit_price: price,
+                    total: qty * price
+                });
+            });
+
+            if (hasError || items.length === 0) {
+                showAlert('يرجى ملء جميع بيانات الأصناف بشكل صحيح', 'error');
+                return;
+            }
+
+            const data = {
+                invoice_number: document.getElementById('invoiceNumber').value,
+                date: document.getElementById('invoiceDate').value,
+                supplier_id: document.getElementById('supplierSelect').value || null,
+                supplier_name: document.getElementById('supplierSelect').selectedOptions[0]?.text || '',
+                items: items,
+                discount: parseFloat(document.getElementById('discount').value) || 0,
+                tax_rate: parseFloat(document.getElementById('taxRate').value) || 0,
+                payment_method: document.getElementById('paymentMethod').value,
+                paid_amount: parseFloat(document.getElementById('paidAmount').value) || 0,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                const res = await fetch('/api/purchases', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    showAlert('✅ تم حفظ فاتورة المشتريات بنجاح', 'success');
+                    document.getElementById('purchaseForm').reset();
+                    document.getElementById('invoiceDate').valueAsDate = new Date();
+                    document.getElementById('itemsBody').innerHTML = `
+                        <tr class="item-row">
+                            <td>
+                                <select class="item-select" onchange="updateItemPrice(this)">
+                                    <option value="">-- اختر صنف --</option>
+                                </select>
+                            </td>
+                            <td><input type="number" class="item-qty" min="1" step="0.01" value="1" onchange="calculateRow(this)"></td>
+                            <td><input type="number" class="item-price" step="0.01" onchange="calculateRow(this)"></td>
+                            <td class="item-total">0.00</td>
+                            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">✕</button></td>
+                        </tr>
+                    `;
+                    updateItemSelects();
+                    calculateTotals();
+                    loadInvoices();
+                    loadInventory();
+                } else {
+                    showAlert('❌ ' + (result.error || 'حدث خطأ'), 'error');
+                }
+            } catch(e) {
+                showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+            }
+        });
+
+        async function loadInvoices() {
+            try {
+                const res = await fetch('/api/purchases');
+                const invoices = await res.json();
+                const container = document.getElementById('invoicesList');
+
+                if (invoices.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 14l2 2 4-4m0 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <p>لا توجد فواتير مشتريات بعد</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = invoices.slice().reverse().map(inv => `
+                    <div class="invoice-item">
+                        <div class="invoice-header">
+                            <div>
+                                <span class="invoice-number">فاتورة #${inv.invoice_number}</span>
+                                <span class="invoice-date"> | ${inv.date}</span>
+                                <span class="status-badge status-${inv.status}">${inv.status === 'completed' ? 'مكتملة' : 'معلقة'}</span>
+                            </div>
+                            <div class="invoice-total">${inv.total.toFixed(2)} ج.م</div>
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">
+                            المورد: ${inv.supplier_name || 'غير محدد'} | 
+                            الدفع: ${inv.payment_method === 'cash' ? 'نقدي' : inv.payment_method === 'credit' ? 'آجل' : 'جزئي'}
+                        </div>
+                        <div class="invoice-items">
+                            ${inv.items.map(item => `
+                                <div class="item-row">
+                                    <span>${item.item_name}</span>
+                                    <span>${item.quantity} × ${item.unit_price.toFixed(2)} = ${item.total.toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch(e) { console.error('Error loading invoices:', e); }
+        }
+    </script>
+</body>
+</html>
