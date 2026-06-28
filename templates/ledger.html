@@ -1,80 +1,122 @@
-{% extends "base.html" %}
-{% block title %}دفتر الأستاذ{% endblock %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دفتر الأستاذ - نظام محاسبي</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .navbar { background: #1a237e; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .navbar a { color: white; text-decoration: none; padding: 8px 16px; margin: 0 5px; border-radius: 4px; transition: 0.3s; }
+        .navbar a:hover { background: #3949ab; }
+        .navbar a.active { background: #5c6bc0; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card-title { font-size: 1.4em; color: #1a237e; margin-bottom: 16px; border-bottom: 2px solid #e8eaf6; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .ledger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .ledger-table th { background: #1a237e; color: white; padding: 12px; text-align: right; }
+        .ledger-table td { padding: 12px; border-bottom: 1px solid #e0e0e0; }
+        .ledger-table tr:hover { background: #f5f5f5; }
+        .balance-positive { color: #2e7d32; font-weight: bold; }
+        .balance-negative { color: #c62828; font-weight: bold; }
+        .final-balance { background: #e8eaf6; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; font-size: 1.2em; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <a href="/">لوحة التحكم</a>
+            <a href="/journal">دفتر اليومية</a>
+            <a href="/ledger" class="active">دفتر الأستاذ</a>
+            <a href="/accounts">دليل الحسابات</a>
+            <a href="/inventory">المخزون</a>
+            <a href="/purchases">المشتريات</a>
+            <a href="/sales">المبيعات</a>
+            <a href="/customers">العملاء</a>
+            <a href="/suppliers">الموردين</a>
+            <a href="/reports">التقارير</a>
+            <a href="/accounting-cycle">الدورة المحاسبية</a>
+        </div>
 
-{% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4"><i class="bi bi-journal-text"></i> دفتر الأستاذ العام</h2>
-    <div class="card mb-4">
-        <div class="card-header">عرض كشف حساب</div>
-        <div class="card-body">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-6">
-                    <label class="form-label">اختر الحساب</label>
-                    <select id="accountSelect" class="form-select">
-                        <option value="">-- اختر الحساب لرؤية حركته --</option>
-                        <option value="الخزينة">الخزينة</option>
-                        <option value="المبيعات">المبيعات</option>
-                        <option value="المشتريات">المشتريات</option>
-                    </select>
-                </div>
-                <div class="col-md-6 text-end mt-4">
-                    <button class="btn btn-primary" onclick="generateLedger()">عرض التقرير</button>
-                </div>
+        <div class="card">
+            <h2 class="card-title">📖 دفتر الأستاذ</h2>
+            <div class="form-group">
+                <label>اختر الحساب</label>
+                <select id="accountSelect" onchange="loadLedger()">
+                    <option value="">-- اختر حساب --</option>
+                </select>
             </div>
+            <div id="ledgerContent"></div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>التاريخ</th>
-                        <th>البيان</th>
-                        <th>مدين (+)</th>
-                        <th>دائن (-)</th>
-                        <th>الرصيد الحالي</th>
-                    </tr>
-                </thead>
-                <tbody id="ledgerRows">
-                    <tr><td colspan="5" class="text-center text-muted">اختر حساباً لعرض البيانات</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<script>
-function generateLedger() {
-    const account = document.getElementById('accountSelect').value;
-    if(!account) return;
-    
-    fetch('/api/journal')
-        .then(res => res.json())
-        .then(entries => {
-            const tbody = document.getElementById('ledgerRows');
-            let balance = 0;
-            let rowsHtml = '';
-            
-            entries.forEach(e => {
-                if(e.debit_account === account || e.credit_account === account) {
-                    let debit = e.debit_account === account ? parseFloat(e.amount) : 0;
-                    let credit = e.credit_account === account ? parseFloat(e.amount) : 0;
-                    balance += (debit - credit);
-                    
-                    rowsHtml += `
-                        <tr>
-                            <td>${new Date(e.date).toLocaleDateString('ar-EG')}</td>
-                            <td>${e.description}</td>
-                            <td class="text-success">${debit || '-'}</td>
-                            <td class="text-danger">${credit || '-'}</td>
-                            <td><b>${balance} ج.م</b></td>
-                        </tr>
-                    `;
-                }
-            });
-            tbody.innerHTML = rowsHtml || '<tr><td colspan="5" class="text-center">لا توجد عمليات مسجلة لهذا الحساب</td></tr>';
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAccounts();
         });
-}
-</script>
-{% endblock %}
+
+        async function loadAccounts() {
+            try {
+                const res = await fetch('/api/accounts');
+                const accounts = await res.json();
+                const select = document.getElementById('accountSelect');
+                for (const [code, info] of Object.entries(accounts)) {
+                    select.innerHTML += `<option value="${code}">${info.name} (${code}) - ${info.type === 'debit' ? 'مدين' : 'دائن'}</option>`;
+                }
+            } catch(e) { console.error('Error:', e); }
+        }
+
+        async function loadLedger() {
+            const code = document.getElementById('accountSelect').value;
+            if (!code) return;
+
+            try {
+                const res = await fetch(`/api/ledger/${code}`);
+                const data = await res.json();
+                const container = document.getElementById('ledgerContent');
+
+                if (data.entries.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">لا توجد حركات على هذا الحساب</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <h3 style="margin-bottom:15px; color:#1a237e;">${data.account_name} (${data.account_code})</h3>
+                    <table class="ledger-table">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>الوصف</th>
+                                <th>المرجع</th>
+                                <th>مدين</th>
+                                <th>دائن</th>
+                                <th>الرصيد</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.entries.map(e => `
+                                <tr>
+                                    <td>${e.date}</td>
+                                    <td>${e.description}</td>
+                                    <td>${e.reference || '-'}</td>
+                                    <td style="color:#2e7d32;">${e.debit > 0 ? e.debit.toFixed(2) : '-'}</td>
+                                    <td style="color:#c62828;">${e.credit > 0 ? e.credit.toFixed(2) : '-'}</td>
+                                    <td class="${e.balance >= 0 ? 'balance-positive' : 'balance-negative'}">${e.balance.toFixed(2)} ${e.balance >= 0 ? 'مدين' : 'دائن'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="final-balance">
+                        الرصيد النهائي: <strong>${Math.abs(data.final_balance).toFixed(2)} ${data.final_balance >= 0 ? 'مدين' : 'دائن'}</strong>
+                    </div>
+                `;
+            } catch(e) { console.error('Error:', e); }
+        }
+    </script>
+</body>
+</html>
